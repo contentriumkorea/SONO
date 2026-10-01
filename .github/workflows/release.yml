@@ -1,4 +1,4 @@
-name: SONO release
+name: SONO
 
 on:
   push:
