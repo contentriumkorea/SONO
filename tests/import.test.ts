@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { expect, it } from 'vitest';
@@ -9,9 +9,10 @@ it('scans nested files and reads real WAV duration with stable IDs',async()=>{
   try{
     await mkdir(path.join(dir,'album'));
     const file=path.join(dir,'album','밤.wav');await writeFile(file,wav());await writeFile(path.join(dir,'ignore.txt'),'ignored');
-    expect(await scanMusic([dir])).toEqual([file]);
+    expect(await scanMusic([dir])).toEqual([await realpath(file)]);
     const track=await readTrack(file);
     expect(track.title).toBe('밤');expect(track.duration).toBeCloseTo(1,2);
+    expect(track.path).toBe(await realpath(file));
     expect((await readTrack(file)).id).toBe(track.id);
   }finally{await rm(dir,{recursive:true,force:true});}
 });
@@ -23,7 +24,7 @@ it('unreadable scan entries are reported while other valid music is imported',as
   const dir=await mkdtemp(path.join(tmpdir(),'luma-scan-'));
   try{
     const file=path.join(dir,'good.wav');await writeFile(file,wav());const failures:string[]=[];
-    expect(await scanMusic([path.join(dir,'missing'),file],failed=>failures.push(failed))).toEqual([file]);
+    expect(await scanMusic([path.join(dir,'missing'),file],failed=>failures.push(failed))).toEqual([await realpath(file)]);
     expect(failures).toEqual([path.join(dir,'missing')]);
   }finally{await rm(dir,{recursive:true,force:true});}
 });
