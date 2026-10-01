@@ -1,7 +1,7 @@
 {
   "name": "sono",
   "productName": "SONO",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "A thoughtfully designed local music player for macOS and Windows",

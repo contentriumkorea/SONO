@@ -47,8 +47,15 @@ jobs:
         run: pnpm ${{ matrix.command }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-      - name: Verify individual deletion
-        run: node scripts/delete-smoke.mjs
+      - name: Verify player interactions
+        shell: bash
+        run: |
+          node scripts/delete-smoke.mjs
+          node scripts/drop-smoke.mjs
+          node scripts/organize-smoke.mjs
+          node scripts/playback-smoke.mjs
+          node scripts/smoke.mjs
+          node scripts/update-smoke.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: sono-${{ matrix.platform }}

@@ -55,6 +55,15 @@ try{
   assert.deepEqual(await titles(),['곡 C','곡 D']);
   console.log('PASS Backspace edits search/rename without removing songs');
 
+  await button('페이드 설정').click();
+  await page.getByRole('heading',{name:'부드러운 재생',exact:true}).click();
+  await page.keyboard.press('Backspace');
+  assert.deepEqual(await titles(),['곡 C','곡 D']);
+  await page.keyboard.press('Delete');
+  assert.deepEqual(await titles(),['곡 C','곡 D']);
+  await button('닫기').click();
+  console.log('PASS dialog backdrop/text focus protects library selection from deletion');
+
   await button('재생목록 만들기').click();
   await page.getByRole('textbox',{name:'이름',exact:true}).fill('삭제 확인');await button('만들기').click();
   await page.locator('.main-nav').getByRole('button',{name:'내 음악',exact:false}).click();

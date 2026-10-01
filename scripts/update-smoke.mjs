@@ -27,7 +27,7 @@ try{
     });
   }else{
     await application.evaluate(({net,shell})=>{
-      net.fetch=async()=>{await new Promise(r=>setTimeout(r,200));return new Response(JSON.stringify({tag_name:'v0.2.0',draft:false,prerelease:false,html_url:'https://github.com/contentriumkorea/SONO/releases/tag/v0.2.0',assets:[{name:'SONO-0.2.0-windows-x64-setup.exe'}]}),{status:200});};
+      net.fetch=async()=>{await new Promise(r=>setTimeout(r,200));return new Response(JSON.stringify({tag_name:'v0.2.0',draft:false,prerelease:false,html_url:'https://github.com/contentriumkorea/SONO/releases/tag/v0.2.0',assets:[{name:'SONO-0.2.0-windows-x64-setup.exe'},{name:'SONO-0.2.0-mac-universal.dmg'}]}),{status:200});};
       shell.openExternal=async url=>{globalThis.sonoOpenedRelease=url;};
     });
   }

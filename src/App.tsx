@@ -139,7 +139,7 @@ export function App(){
     });
     const key=(event:KeyboardEvent)=>{
       const target=event.target as HTMLElement;
-      if(target.closest('input:not([type="checkbox"]),textarea,select,[role="dialog"]'))return;
+      if(document.querySelector('[role="dialog"][aria-modal="true"]')||target.closest('input:not([type="checkbox"]),textarea,select'))return;
       if(target.closest('input[type="checkbox"]')&&event.code==='Space')return;
       if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='a'){event.preventDefault();controls.current.selectAll();return;}
       if(event.key==='Delete'||event.key==='Backspace'){event.preventDefault();controls.current.remove();return;}

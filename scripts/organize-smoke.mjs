@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url),root=process.cwd();
+const selectionModifier=process.platform==='darwin'?'Meta':'Control';
 const dir=await mkdtemp(path.join(tmpdir(),'sono-organize-')),data=path.join(dir,'data');
 const one=path.join(dir,'폴더 하나'),two=path.join(dir,'폴더 둘');
 await mkdir(data);await mkdir(one);await mkdir(two);await mkdir('test-results',{recursive:true});
@@ -55,7 +56,7 @@ try{
   await internalDrag(row('곡 B').locator('.drag-handle'),heading('폴더 하나'));
   grouped=await groups();assert.deepEqual(grouped['폴더 하나'],['곡 B']);
   console.log('PASS moving the last song and dropping into an empty folder');
-  await title('곡 A').click();await title('곡 B').click({modifiers:['Control']});
+  await title('곡 A').click();await title('곡 B').click({modifiers:[selectionModifier]});
   assert.equal(await page.locator('.track-row.is-selected').count(),2);
   await internalDrag(row('곡 A').locator('.drag-handle'),heading('폴더 둘'));
   grouped=await groups();assert.deepEqual(grouped['폴더 하나'],[]);assert.deepEqual(grouped['폴더 둘'],['곡 A','곡 B','곡 C']);
@@ -102,7 +103,7 @@ try{
   await launch();await title('빈 폴더 정리 (2)').waitFor();await title('빈 폴더 정리 (2)').click();
   assert.deepEqual(await page.locator('.folder-group-heading strong').allTextContents(),['좋아하는 폴더']);
   assert.equal(await page.locator('.track-title').count(),3);
-  await title('내 음악').click();await page.keyboard.press('Control+a');await title('선택 삭제 (3)').click();
+  await title('내 음악').click();await page.keyboard.press(`${selectionModifier}+a`);await title('선택 삭제 (3)').click();
   await title('첫 음악 가져오기').waitFor();
   await app.close();
   const cleared=JSON.parse(await readFile(path.join(data,'state.json'),'utf8'));

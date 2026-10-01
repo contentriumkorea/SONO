@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 
 const require=createRequire(import.meta.url);
 const root=process.cwd();
+const selectionModifier=process.platform==='darwin'?'Meta':'Control';
 const dir=await mkdtemp(path.join(tmpdir(),'sono-drop-'));
 const data=path.join(dir,'data');
 const folder=path.join(dir,'음악 폴더');
@@ -217,7 +218,7 @@ try{
   await page.waitForFunction(()=>document.querySelectorAll('.track-title').length===3);
   assert.equal(await page.getByRole('button',{name:'드롭 음악 A',exact:true}).count(),0);
   for(const file of [...files,nested,rootSong,sibling])await access(file);
-  await page.keyboard.press('Control+a');
+  await page.keyboard.press(`${selectionModifier}+a`);
   await page.getByRole('button',{name:'선택 삭제 (3)',exact:true}).waitFor();
   await page.keyboard.press('Delete');
   await page.getByRole('button',{name:'첫 음악 가져오기',exact:true}).waitFor();
