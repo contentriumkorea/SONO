@@ -1,0 +1,83 @@
+{
+  "name": "sono",
+  "productName": "SONO",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A thoughtfully designed local music player for macOS and Windows",
+  "author": { "name": "Contentrium", "url": "https://github.com/contentriumkorea" },
+  "homepage": "https://github.com/contentriumkorea/SONO",
+  "repository": { "type": "git", "url": "https://github.com/contentriumkorea/SONO.git" },
+  "main": "dist-electron/main.mjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/start.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm test && pnpm typecheck && pnpm build",
+    "pack:win": "pnpm build && electron-builder --win --dir",
+    "pack:mac": "pnpm build && electron-builder --mac --dir",
+    "release:win": "pnpm build && electron-builder --win nsis --x64 --publish never",
+    "release:mac": "pnpm build && electron-builder --mac --universal --publish never"
+  },
+  "build": {
+    "appId": "local.luma.music",
+    "productName": "SONO",
+    "publish": { "provider": "github", "owner": "contentriumkorea", "repo": "SONO", "releaseType": "release" },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "artifactName": "SONO-${version}-mac-${arch}.${ext}",
+      "icon": "resources/icon.icns",
+      "category": "public.app-category.music",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "resources/icon.ico",
+      "artifactName": "SONO-${version}-windows-${arch}-setup.${ext}",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "SONO"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "6.8.0",
+    "lucide-react": "^1.49.0",
+    "music-metadata": "^11.16.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "electron": "^44.5.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^20.14.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}
