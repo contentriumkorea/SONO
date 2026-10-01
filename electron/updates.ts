@@ -1,10 +1,10 @@
 import type { UpdateState } from '../src/shared/types';
 
-interface NativeUpdater {
+export interface NativeUpdater {
   autoDownload:boolean;autoInstallOnAppQuit:boolean;allowPrerelease:boolean;allowDowngrade:boolean;
   on(event:string,listener:(...args:any[])=>void):unknown;
   checkForUpdates():Promise<unknown>;downloadUpdate():Promise<unknown>;
-  quitAndInstall(silent:boolean,relaunch:boolean):void;
+  quitAndInstall(silent:boolean,relaunch:boolean):void|Promise<void>;
 }
 interface Options {
   version:string;releasesUrl:string;updater?:NativeUpdater;
@@ -15,7 +15,7 @@ function numbers(version:string){
   if(!/^\d+\.\d+\.\d+$/.test(version))throw new Error('유효한 정식 버전이 아닙니다.');
   return version.split('.').map(Number);
 }
-function newer(candidate:string,current:string){
+export function isNewerVersion(candidate:string,current:string){
   const a=numbers(candidate),b=numbers(current);
   for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i];}
   return false;
@@ -54,7 +54,7 @@ export function createUpdateService(options:Options){
           if(updater)await updater.checkForUpdates();
           else{
             const release=await options.readRelease();
-            if(newer(release.version,options.version))set({status:'available',latestVersion:release.version,message:'새 버전을 설치 파일 페이지에서 받을 수 있습니다.'});
+            if(isNewerVersion(release.version,options.version))set({status:'available',latestVersion:release.version,message:'새 버전을 설치 파일 페이지에서 받을 수 있습니다.'});
             else set({status:'current',message:'최신 버전을 사용하고 있습니다.'});
           }
         }catch{failed();}
@@ -73,8 +73,11 @@ export function createUpdateService(options:Options){
     async install():Promise<UpdateState>{
       if(!updater||state.status!=='downloaded'||installing)return service.get();
       installing=true;set({status:'installing',message:'설정을 저장하고 재시작합니다.'});
-      try{await options.flush();updater.quitAndInstall(false,true);}
-      catch{set({status:'downloaded',message:'설정을 저장하지 못했습니다. 설치하지 않았습니다. 다시 시도해주세요.'});}
+      try{
+        try{await options.flush();}catch{set({status:'downloaded',message:'설정을 저장하지 못했습니다. 설치하지 않았습니다. 다시 시도해주세요.'});return service.get();}
+        try{await updater.quitAndInstall(false,true);}
+        catch(error){set({status:'downloaded',message:`앱을 교체하지 못했습니다. ${error instanceof Error&&/응용프로그램|쓰기 권한/.test(error.message)?error.message:'기존 앱은 유지됩니다. 다시 시도해주세요.'}`});}
+      }
       finally{installing=false;}
       return service.get();
     }

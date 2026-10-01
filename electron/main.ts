@@ -13,6 +13,7 @@ import { fileResponse } from './media';
 import { createExitFlusher } from './lifecycle';
 import { folderContains, trackDirectory } from '../src/shared/folders';
 import { createUpdateService, readRelease } from './updates';
+import { MacUpdater } from './mac-updates';
 import packageInfo from '../package.json';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 if(process.env.LUMA_DATA_DIR)app.setPath('userData',process.env.LUMA_DATA_DIR);
@@ -38,9 +39,14 @@ const stateFile=()=>path.join(app.getPath('userData'),'state.json');
 const artDir=()=>path.join(app.getPath('userData'),'artwork');
 const devURL=process.env.LUMA_DEV_URL;
 const releasesUrl=`https://github.com/${packageInfo.build.publish.owner}/${packageInfo.build.publish.repo}/releases`;
+const updateCache=path.join(app.getPath('userData'),'mac-updates');
+const updateArgument=(name:string)=>process.argv.find(arg=>new RegExp(`^--${name}=[a-f\\d]{8}(?:-[a-f\\d]{4}){3}-[a-f\\d]{12}$`).test(arg))?.split('=')[1];
+const updateToken=updateArgument('sono-update-token');
+const rollbackToken=updateArgument('sono-update-rollback');
+const macUpdater=app.isPackaged&&process.platform==='darwin'?new MacUpdater({version:app.getVersion(),releasesUrl,bundlePath:path.dirname(path.dirname(path.dirname(process.execPath))),cacheDir:updateCache,helperPath:path.join(root,'resources','mac-update.sh'),fetch:(url,init)=>net.fetch(url,init),quit:()=>app.quit()}):undefined;
 const updates=createUpdateService({
-  version:packageInfo.version,releasesUrl,
-  updater:app.isPackaged&&process.platform==='win32'?updaterPackage.autoUpdater:undefined,
+  version:app.getVersion(),releasesUrl,
+  updater:macUpdater||(app.isPackaged&&process.platform==='win32'?updaterPackage.autoUpdater:undefined),
   readRelease:async()=>{
     const response=await net.fetch(`https://api.github.com/repos/${packageInfo.build.publish.owner}/${packageInfo.build.publish.repo}/releases/latest`,{headers:{Accept:'application/vnd.github+json','User-Agent':'SONO'},signal:AbortSignal.timeout(15000)});
     if(!response.ok)throw new Error('릴리스를 확인하지 못했습니다.');
@@ -66,7 +72,7 @@ function protect(win:BrowserWindow){
 function createMain(){
   allowMainClose=false;
   mainWindow=new BrowserWindow({width:1320,height:880,minWidth:960,minHeight:650,show:false,title:'SONO',icon:path.join(root,'resources','icon.png'),backgroundColor:'#171717',frame:process.platform==='darwin',titleBarStyle:process.platform==='darwin'?'hiddenInset':undefined,webPreferences:{preload:path.join(root,'dist-electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,autoplayPolicy:'no-user-gesture-required'}});
-  protect(mainWindow);mainWindow.once('ready-to-show',()=>mainWindow?.show());mainWindow.on('closed',()=>{mainWindow=null;miniWindow?.close();});
+  protect(mainWindow);mainWindow.once('ready-to-show',()=>{mainWindow?.show();if(updateToken)void writeFile(path.join(updateCache,updateToken,'health'),app.getVersion(),{mode:0o600}).catch(()=>{});});mainWindow.on('closed',()=>{mainWindow=null;miniWindow?.close();});
   mainWindow.on('close',event=>{if(allowMainClose)return;event.preventDefault();void flushBeforeExit().finally(()=>{allowMainClose=true;mainWindow?.close();});});
   mainWindow.loadURL(urlFor());
 }
@@ -97,6 +103,7 @@ async function importMusicPaths(paths:string[]){
 }
 app.whenReady().then(async()=>{
   ({state,warning}=await readState(stateFile()));
+  if(rollbackToken)warning='새 버전 실행에 실패해 이전 SONO 앱으로 복구했습니다. 보관함과 설정은 유지됩니다.';
   protocol.handle('luma',async(request)=>{
     const url=new URL(request.url);
     if(url.hostname==='audio'){

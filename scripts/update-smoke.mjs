@@ -14,15 +14,12 @@ try{
   const page=await application.firstWindow();page.setDefaultTimeout(15000);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.getByRole('heading',{name:'내 음악.'}).waitFor();
-  await page.getByRole('button',{name:'업데이트',exact:true}).click();
-  await page.getByRole('heading',{name:'SONO 업데이트'}).waitFor();
-  const version=await application.evaluate(({app})=>app.getVersion());
-  assert.ok((await page.locator('.update-version').first().textContent()).includes(`v${version}`));
   if(packaged){
     await application.evaluate(async({app})=>{
       const {createRequire}=process.getBuiltinModule('node:module');const require=createRequire(app.getAppPath()+'/package.json');
       const {autoUpdater}=require('electron-updater');
       autoUpdater.checkForUpdates=async()=>{await new Promise(r=>setTimeout(r,200));autoUpdater.emit('update-available',{version:'0.2.0'});return null;};
+      autoUpdater.quitAndInstall=()=>{globalThis.sonoInstalled=true;};
       autoUpdater.downloadUpdate=async()=>{autoUpdater.emit('download-progress',{percent:37});await new Promise(r=>setTimeout(r,400));autoUpdater.emit('update-downloaded',{version:'0.2.0'});return [];};
     });
   }else{
@@ -31,14 +28,19 @@ try{
       shell.openExternal=async url=>{globalThis.sonoOpenedRelease=url;};
     });
   }
-  await page.getByRole('button',{name:'업데이트 확인',exact:true}).click();
+  await page.getByRole('button',{name:'업데이트',exact:true}).click();
+  await page.getByRole('heading',{name:'SONO 업데이트'}).waitFor();
+  const version=await application.evaluate(({app})=>app.getVersion());
+  assert.ok((await page.locator('.update-version').first().textContent()).includes(`v${version}`));
   await page.getByRole('button',{name:'업데이트 확인 중'}).waitFor();
-  await page.getByRole('button',{name:packaged?'업데이트 다운로드':'설치 파일 받기',exact:true}).waitFor();
+  await page.getByRole('button',{name:packaged?'지금 업데이트':'설치 파일 받기',exact:true}).waitFor();
   assert.match(await page.locator('.update-version').last().textContent(),/v0\.2\.0/);
-  await page.getByRole('button',{name:packaged?'업데이트 다운로드':'설치 파일 받기',exact:true}).click();
+  await page.getByRole('button',{name:packaged?'지금 업데이트':'설치 파일 받기',exact:true}).click();
   if(packaged){
     await page.getByRole('progressbar',{name:'업데이트 다운로드 진행률'}).waitFor();
-    await page.getByRole('button',{name:'재시작하여 설치'}).waitFor();
+    await page.waitForFunction(async()=> (await window.luma.getUpdateState()).status==='installing');
+    for(let i=0;i<50&&!await application.evaluate(()=>globalThis.sonoInstalled);i++)await new Promise(r=>setTimeout(r,100));
+    assert.equal(await application.evaluate(()=>globalThis.sonoInstalled),true);
   }else{
     assert.equal(await application.evaluate(()=>globalThis.sonoOpenedRelease),'https://github.com/contentriumkorea/SONO/releases');
   }
@@ -46,6 +48,6 @@ try{
   await page.getByRole('button',{name:'닫기',exact:true}).click();
   await page.getByRole('heading',{name:'내 음악.'}).waitFor();
   assert.deepEqual(errors,[]);
-  console.log('PASS update dialog: actual IPC, current version, checking, new version, '+(packaged?'download progress and explicit restart button':'manual release page link')+' (release responses/download simulated)');
+  console.log('PASS update dialog: actual IPC, current version, checking, new version, '+(packaged?'download progress and automatic install after one click':'manual release page link')+' (release responses/download simulated)');
 }catch(error){throw error;}
 finally{if(application)await application.close();await rm(dir,{recursive:true,force:true});}

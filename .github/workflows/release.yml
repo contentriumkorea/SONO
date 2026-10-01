@@ -49,6 +49,9 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - name: Verify player interactions
         run: pnpm verify:interactions
+      - name: Verify packaged Mac app replacement
+        if: matrix.platform == 'mac'
+        run: pnpm verify:mac-update
       - uses: actions/upload-artifact@v4
         with:
           name: sono-${{ matrix.platform }}

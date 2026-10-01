@@ -64,7 +64,7 @@ Windows에서 실제 실행 및 파일 재생을 검증합니다. macOS용 소�
 
 MP3, WAV, FLAC, M4A/AAC, OGG/Opus, AIFF 파일을 가져오도록 구성했습니다. 실제 재생 가능 여부는 코덱과 컨테이너에 따라 다르며 지원하지 않는 파일에는 오류를 표시합니다. DRM, AIMP 전용 스킨·플러그인, 파일 변환·CD 추출·CUE 분리는 현재 범위에 포함하지 않습니다.
 
-GitHub Releases에서 Windows 설치 파일과 Mac 공용 설치 파일을 배포합니다. 왼쪽 아래 업데이트 버튼으로 새 버전을 확인합니다. Windows 설치 버전은 다운로드 후 재시작하여 설치하고, Mac 첫 배포는 설치 파일을 받아 교체합니다. 음악 재생은 로컬 파일을 사용하며 업데이트 확인 시에만 GitHub에 연결합니다.
+GitHub Releases에서 Windows 설치 파일과 Mac 공용 설치 파일을 배포합니다. 왼쪽 아래 업데이트 버튼으로 새 버전을 확인합니다. Windows·Mac 설치 버전은 ‘지금 업데이트’ 한 번으로 다운로드·앱 교체·재실행합니다. Mac 0.1.2 이하에서는 0.1.3으로 최초 한 번 직접 교체한 뒤 이후 자동 업데이트를 사용합니다. 음악 재생은 로컬 파일을 사용하며 업데이트 확인 시에만 GitHub에 연결합니다.
 
 [설치 파일](https://github.com/contentriumkorea/SONO/releases/latest) · [배포와 업데이트 안내](docs/배포와 업데이트.md)
 
@@ -76,4 +76,4 @@ pnpm release:win
 pnpm release:mac
 ```
 
-GitHub Actions는 Windows NSIS 설치 파일과 Mac 공용 DMG/ZIP을 빌드합니다. macOS 첫 배포는 서명·공증 전 시험 배포이며 앱 내 자동 설치는 제공하지 않습니다. 상세 절차는 배포와 업데이트 안내를 확인하세요.
+GitHub Actions는 Windows NSIS 설치 파일과 Mac 공용 DMG/ZIP을 빌드합니다. macOS는 ad-hoc 서명을 사용하는 시험 배포이며 Developer ID 서명·공증은 아직 구성하지 않았습니다. Mac 자동 업데이트는 파일 검증과 실패 시 복구를 포함합니다. 상세 절차는 배포와 업데이트 안내를 확인하세요.

@@ -43,6 +43,7 @@ export function App(){
   const importBusy=useRef(false);
   const [toast,setToast]=useState('');
   const [dialog,setDialog]=useState<Dialog>(null);
+  useEffect(()=>{if(dialog==='update')void window.luma.checkForUpdates().then(setUpdateState).catch(()=>notify('업데이트를 확인하지 못했습니다.'));},[dialog]);
   const [nameDialog,setNameDialog]=useState<NameDialog>(null);
   const [renameDialog,setRenameDialog]=useState<{kind:'track'|'folder';id:string;name:string}|null>(null);
   const [assignTrack,setAssignTrack]=useState<Track|null>(null);
