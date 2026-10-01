@@ -16,7 +16,8 @@ try{
   await page.getByRole('heading',{name:'내 음악.'}).waitFor();
   await page.getByRole('button',{name:'업데이트',exact:true}).click();
   await page.getByRole('heading',{name:'SONO 업데이트'}).waitFor();
-  assert.match(await page.locator('.update-version').first().textContent(),/v0\.1\.0/);
+  const version=await application.evaluate(({app})=>app.getVersion());
+  assert.ok((await page.locator('.update-version').first().textContent()).includes(`v${version}`));
   if(packaged){
     await application.evaluate(async({app})=>{
       const {createRequire}=process.getBuiltinModule('node:module');const require=createRequire(app.getAppPath()+'/package.json');

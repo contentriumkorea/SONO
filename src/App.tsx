@@ -142,7 +142,7 @@ export function App(){
       if(target.closest('input:not([type="checkbox"]),textarea,select,[role="dialog"]'))return;
       if(target.closest('input[type="checkbox"]')&&event.code==='Space')return;
       if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='a'){event.preventDefault();controls.current.selectAll();return;}
-      if(event.key==='Delete'){event.preventDefault();controls.current.remove();return;}
+      if(event.key==='Delete'||event.key==='Backspace'){event.preventDefault();controls.current.remove();return;}
       if(event.code==='Space'){event.preventDefault();controls.current.toggle();}
       if(event.ctrlKey||event.metaKey){if(event.key==='ArrowRight'){event.preventDefault();controls.current.next();}if(event.key==='ArrowLeft'){event.preventDefault();controls.current.previous();}}
     };document.addEventListener('keydown',key);
@@ -228,16 +228,19 @@ export function App(){
     });if(!event.shiftKey)selectionAnchor.current=id;
   }
   async function deleteSelected(){
-    if(!selected.size||deleting||importing)return;
-    const ids=[...selected];setDeleting(true);
+    await deleteSongs([...selected]);
+  }
+  async function deleteSongs(ids:string[]){
+    if(!ids.length||deleting||importing)return;
+    const removing=new Set(ids);setDeleting(true);setMenu(null);
     try{
-      if(playlist){setState(s=>({...s,playlists:s.playlists.map(p=>p.id===playlist.id?{...p,trackIds:p.trackIds.filter(id=>!selected.has(id))}:p)}));}
+      if(playlist){setState(s=>({...s,playlists:s.playlists.map(p=>p.id===playlist.id?{...p,trackIds:p.trackIds.filter(id=>!removing.has(id))}:p)}));}
       else {
         await window.luma.removeMusic(ids);
-        if(stateRef.current.playback.currentId&&selected.has(stateRef.current.playback.currentId)){player.current?.clear();setPosition(0);setDuration(0);}
+        if(stateRef.current.playback.currentId&&removing.has(stateRef.current.playback.currentId)){player.current?.clear();setPosition(0);setDuration(0);}
         setState(s=>removeLibraryTracks(s,ids));
       }
-      setSelected(new Set());notify(`${ids.length}곡을 ${playlist?'재생목록':'보관함'}에서 삭제했습니다.`);
+      setSelected(previous=>new Set([...previous].filter(id=>!removing.has(id))));notify(`${ids.length}곡을 ${playlist?'재생목록':'보관함'}에서 삭제했습니다.`);
     }catch(error){notify((error as Error).message.replace(/^.*Error: /,''));}
     finally{setDeleting(false);}
   }
@@ -315,7 +318,7 @@ export function App(){
           {visible.length?<div className="track-table" role="table" aria-label="음악 목록"><div className="track-header track-row" role="row"><span/><span>재생</span><span>파일 이름</span><span/><span><Clock3 size={14}/></span><span/></div>{listItems.map(item=>{if(item.kind==='folder')return folderHeading(item.folder);const track=item.track;return             <div className={`track-row ${grouped?'grouped-track':''} ${selected.has(track.id)?'is-selected':''} ${track.id===current?.id?'is-current':''} ${draggedTrack===track.id?'is-dragging':''} ${dropTarget===track.id?`drop-target ${dropAfter?'drop-after':''}`:''}`} role="row" aria-selected={selected.has(track.id)} draggable onDragStart={e=>startTrackDrag(e,selected.has(track.id)?visible.filter(t=>selected.has(t.id)).map(t=>t.id):[track.id])} onDragOver={e=>{if(!dragIds.current.length&&!e.dataTransfer.types.includes('application/x-sono-track'))return;e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='move';setDropTarget(track.id);const rect=e.currentTarget.getBoundingClientRect();setDropAfter(e.clientY>rect.top+rect.height/2);}} onDrop={e=>{if(!dragIds.current.length&&!e.dataTransfer.types.includes('application/x-sono-track'))return;dropTrack(track.id,e);}} onDragEnd={()=>{dragIds.current=[];dragFolder.current=null;setDraggedTrack(null);setDropTarget(null);}} onClick={e=>{if((e.target as HTMLElement).closest('button,input'))return;selectTrack(track.id,e);}} onDoubleClick={()=>playTrack(track,visible.map(t=>t.id))}>
             <button className="drag-handle" draggable aria-label={`${songName(track)} 순서 이동`} title="끌어서 곡 이동" onDragStart={e=>startTrackDrag(e,selected.has(track.id)?visible.filter(t=>selected.has(t.id)).map(t=>t.id):[track.id])} onClick={e=>e.stopPropagation()}><GripVertical size={15}/></button>
             <button className={`track-number ${track.id===current?.id&&playing?'playing':''}`} aria-label={`${songName(track)} ${track.id===current?.id&&playing?'일시정지':'재생'}`} title={track.id===current?.id&&playing?'일시정지':'재생'} onDoubleClick={e=>e.stopPropagation()} onClick={()=>toggleTrack(track)}>{track.id===current?.id&&playing?<Pause size={15} fill="currentColor"/>:<Play size={15} fill="currentColor"/>}</button>
-            <div className="track-identity"><Artwork track={track}/><div><button className="track-title" onClick={e=>selectTrack(track.id,e)}>{songName(track)}</button></div></div><IconButton label={`${songName(track)} ${track.favorite?'좋아요 취소':'좋아요'}`} active={track.favorite} onClick={()=>favorite(track.id)}><Heart size={16} fill={track.favorite?'currentColor':'none'}/></IconButton><span className="track-duration">{formatTime(track.duration)}</span><div className="menu-wrapper"><IconButton label={`${songName(track)} 더 보기`} onClick={()=>setMenu(menu===track.id?null:track.id)}><MoreHorizontal size={19}/></IconButton>{menu===track.id&&<div className="dropdown track-dropdown" onClick={e=>e.stopPropagation()}><button onClick={()=>{setRenameDialog({kind:'track',id:track.id,name:songName(track)});setMenu(null);}}><Pencil size={16}/>이름 변경</button><button onClick={()=>addQueue(track)}><ListEnd size={16}/>대기열에 추가</button><button onClick={()=>{setAssignTrack(track);setMenu(null);}}><Plus size={16}/>재생목록에 추가</button>{playlist&&<><button disabled={!['added','manual'].includes(sort)||!!query} onClick={()=>{reorder(track.id,-1);setMenu(null);}}><ArrowUp size={16}/>위로 이동</button><button disabled={!['added','manual'].includes(sort)||!!query} onClick={()=>{reorder(track.id,1);setMenu(null);}}><ArrowDown size={16}/>아래로 이동</button><button onClick={()=>{setState(s=>({...s,playlists:s.playlists.map(p=>p.id===playlist.id?{...p,trackIds:p.trackIds.filter(id=>id!==track.id)}:p)}));setMenu(null);}}><Minus size={16}/>목록에서 제거</button></>}</div>}</div>
+            <div className="track-identity"><Artwork track={track}/><div><button className="track-title" onClick={e=>selectTrack(track.id,e)}>{songName(track)}</button></div></div><IconButton label={`${songName(track)} ${track.favorite?'좋아요 취소':'좋아요'}`} active={track.favorite} onClick={()=>favorite(track.id)}><Heart size={16} fill={track.favorite?'currentColor':'none'}/></IconButton><span className="track-duration">{formatTime(track.duration)}</span><div className="menu-wrapper"><IconButton label={`${songName(track)} 더 보기`} onClick={()=>setMenu(menu===track.id?null:track.id)}><MoreHorizontal size={19}/></IconButton>{menu===track.id&&<div className="dropdown track-dropdown" onClick={e=>e.stopPropagation()}><button onClick={()=>{setRenameDialog({kind:'track',id:track.id,name:songName(track)});setMenu(null);}}><Pencil size={16}/>이름 변경</button><button onClick={()=>addQueue(track)}><ListEnd size={16}/>대기열에 추가</button><button onClick={()=>{setAssignTrack(track);setMenu(null);}}><Plus size={16}/>재생목록에 추가</button>{playlist&&<><button disabled={!['added','manual'].includes(sort)||!!query} onClick={()=>{reorder(track.id,-1);setMenu(null);}}><ArrowUp size={16}/>위로 이동</button><button disabled={!['added','manual'].includes(sort)||!!query} onClick={()=>{reorder(track.id,1);setMenu(null);}}><ArrowDown size={16}/>아래로 이동</button></>}<button disabled={deleting||importing} onClick={()=>void deleteSongs([track.id])}><Minus size={16}/>{playlist?'목록에서 제거':'보관함에서 제거'}</button></div>}</div>
           </div>;})}</div>:<div className="list-empty"><Music2 size={30}/><h3>{query?'찾는 음악이 없어요':playlist?'음악으로 채워보세요':'아직 좋아하는 음악이 없어요'}</h3><p>{query?'다른 검색어로 찾아보세요.':playlist?'내 음악에서 곡의 더 보기 메뉴로 추가할 수 있어요.':'곡 옆의 하트를 눌러 좋아하는 음악을 모아보세요.'}</p></div>}
           </section>
         </>}
