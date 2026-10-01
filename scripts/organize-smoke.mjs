@@ -1,6 +1,6 @@
 import { _electron as electron } from '@playwright/test';
 import { createRequire } from 'node:module';
-import { mkdtemp, mkdir, writeFile, readFile, rm, access } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, access, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -76,7 +76,7 @@ try{
   await rename('folder','폴더 하나','빈 폴더');
   await app.close();
   const saved=JSON.parse(await readFile(path.join(data,'state.json'),'utf8'));
-  assert.equal(saved.tracks.find(t=>t.displayName==='내 음악').path,files[0]);
+  assert.equal(saved.tracks.find(t=>t.displayName==='내 음악').path,await realpath(files[0]));
   assert.deepEqual(saved.folders.map(f=>f.name),['빈 폴더','좋아하는 폴더']);
   for(const file of files)await access(file);
   await launch();await title('내 음악').waitFor();assert.deepEqual((await groups())['좋아하는 폴더'],['내 음악','곡 B','곡 C']);assert.deepEqual((await groups())['빈 폴더'],[]);

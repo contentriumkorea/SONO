@@ -1,6 +1,6 @@
 import { _electron as electron } from '@playwright/test';
 import { createRequire } from 'node:module';
-import { mkdtemp, mkdir, writeFile, readFile, rm, access } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, access, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -197,7 +197,7 @@ try{
   await application.close();
   const saved=JSON.parse(await readFile(path.join(data,'state.json'),'utf8'));
   assert.equal(saved.tracks.length,5);
-  assert.equal(saved.tracks.find(t=>t.title==='폴더 음악 C').folderRoot,folder);
+  assert.equal(saved.tracks.find(t=>t.title==='폴더 음악 C').folderRoot,await realpath(folder));
   application=await electron.launch(launchOptions);
   page=await application.firstWindow();page.on('pageerror',error=>errors.push(error.message));
   await page.getByRole('heading',{name:'내 음악.'}).waitFor();
