@@ -2,6 +2,8 @@ name: SONO
 
 on:
   push:
+    branches: ['main']
+    paths: ['package.json']
     tags: ['v*']
   workflow_dispatch:
 
