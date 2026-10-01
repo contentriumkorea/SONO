@@ -18,7 +18,7 @@ async function fixture(fail=false){
   await writeFile(path.join(target,'Contents','MacOS','SONO'),'#!/bin/sh\nprintf old > "$SONO_TEST_RESTART"\n',{mode:0o755});
   await writeFile(path.join(candidate,'Contents','MacOS','SONO'),fail?'#!/bin/sh\nexit 1\n':'#!/bin/sh\nprintf 0.2.0 > "$SONO_TEST_HEALTH"\n',{mode:0o755});
   const env={...process.env,SONO_TEST_HEALTH:posix(path.join(workspace,'health')),SONO_TEST_RESTART:posix(path.join(dir,'restarted'))};
-  const args=(pid='99999999',c=candidate)=>[helper,pid,posix(target),posix(c),posix(workspace),token,'0.2.0',env.SONO_TEST_HEALTH,'5'];
+  const args=(pid='99999999',c=candidate)=>[helper,pid,posix(target),posix(c),posix(workspace),token,'0.2.0',env.SONO_TEST_HEALTH,fail?'5':'50'];
   return {dir,target,candidate,workspace,token,env,args};
 }
 it('replaces the app, relaunches it and removes the backup only after health confirmation',async()=>{

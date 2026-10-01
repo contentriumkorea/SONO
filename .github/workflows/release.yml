@@ -49,6 +49,11 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - name: Verify player interactions
         run: pnpm verify:interactions
+      - name: Verify packaged Windows update button
+        if: matrix.platform == 'windows'
+        run: pnpm verify:update
+        env:
+          SONO_SMOKE_EXECUTABLE: ${{ github.workspace }}/release/win-unpacked/SONO.exe
       - name: Verify packaged Mac app replacement
         if: matrix.platform == 'mac'
         run: pnpm verify:mac-update

@@ -21,6 +21,7 @@
     "check": "pnpm test && pnpm typecheck && pnpm build",
     "verify:interactions": "node scripts/delete-smoke.mjs && node scripts/drop-smoke.mjs && node scripts/organize-smoke.mjs && node scripts/playback-smoke.mjs && node scripts/smoke.mjs && node scripts/update-smoke.mjs",
     "verify:mac-update": "node scripts/mac-update-smoke.mjs",
+    "verify:update": "node scripts/update-smoke.mjs --packaged",
     "pack:win": "pnpm build && electron-builder --win --dir",
     "pack:mac": "pnpm build && electron-builder --mac --dir",
     "release:win": "pnpm build && electron-builder --win nsis --x64 --publish never",
