@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { emptyState, mergeTracks, sanitizeState, removeLibraryTracks } from '../src/shared/library';
 import type { AppState, LiveState, Track } from '../src/shared/types';
 import { readState, writeState } from './store';
-import { AUDIO_EXTENSIONS, parseM3U, readTrack, scanMusic } from './library';
+import { AUDIO_EXTENSIONS, parseM3U, readTrack, scanMusic, repairMp4Metadata } from './library';
 import { fileResponse } from './media';
 import { createExitFlusher } from './lifecycle';
 import { folderContains, trackDirectory } from '../src/shared/folders';
@@ -105,6 +105,9 @@ async function importMusicPaths(paths:string[]){
 }
 app.whenReady().then(async()=>{
   ({state,warning}=await readState(stateFile()));
+  if(await repairMp4Metadata(state.tracks)){
+    try{await persist();}catch{warning='음원 정보를 갱신했지만 저장하지 못했습니다.';}
+  }
   if(rollbackToken)warning='새 버전 실행에 실패해 이전 SONO 앱으로 복구했습니다. 보관함과 설정은 유지됩니다.';
   protocol.handle('luma',async(request)=>{
     const url=new URL(request.url);

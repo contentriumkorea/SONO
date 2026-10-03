@@ -72,6 +72,10 @@ jobs:
         run: pnpm verify:waveform-fade
         env:
           SONO_SMOKE_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
+      - name: Verify packaged mislabeled audio repair
+        run: pnpm verify:mislabeled-audio
+        env:
+          SONO_SMOKE_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
       - name: Verify packaged Mac app replacement
         if: matrix.platform == 'mac'
         run: pnpm verify:mac-update

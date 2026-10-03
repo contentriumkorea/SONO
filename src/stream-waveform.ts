@@ -8,7 +8,11 @@ export async function decodeStream(url:string,duration:number,signal:AbortSignal
   try{
     const track=await input.getPrimaryAudioTrack();signal.throwIfAborted();
     if(!track||!await track.canDecode())throw new Error('이 음원 형식의 파형을 읽을 수 없습니다.');
-    const total=duration>0?duration:await track.computeDuration();signal.throwIfAborted();
+    // Imported metadata can be stale or come from an incorrectly named source.
+    // Bucket by the actual packet timeline, not a previously stored duration.
+    let total:number;
+    try{total=await track.computeDuration();}catch(error){signal.throwIfAborted();if(!(duration>0&&Number.isFinite(duration)))throw error;total=duration;}
+    signal.throwIfAborted();
     return await streamPeaks(new AudioBufferSink(track).buffers(),total,signal,onProgress);
   }finally{signal.removeEventListener('abort',dispose);dispose();}
 }

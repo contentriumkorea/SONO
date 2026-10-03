@@ -1,5 +1,6 @@
 import { expect,it } from 'vitest';
-import { mkdtemp,writeFile,rm } from 'node:fs/promises';
+import { mkdtemp,writeFile,rm,stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { readWaveform,writeWaveform } from '../electron/waveforms';
@@ -24,5 +25,14 @@ it('returns native PCM peaks even when the cache directory cannot be created',as
     b.write('RIFF');b.writeUInt32LE(44,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(8000,24);b.writeUInt32LE(16000,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(8,40);
     [0,16384,-8192,0].forEach((v,i)=>b.writeInt16LE(v,44+i*2));await writeFile(file,b);await writeFile(cache,'blocks mkdir');
     const info=await readWaveform(file,cache);expect(info.peaks).toHaveLength(960);expect(Math.max(...info.peaks!)).toBe(.5);
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
+it('ignores legacy peaks computed against a wrong imported duration',async()=>{
+  const dir=await mkdtemp(path.join(tmpdir(),'sono-cache-version-'));
+  try{
+    const file=path.join(dir,'source.mp3');await writeFile(file,'fixture');const s=await stat(file);
+    const key=createHash('sha256').update(`wave-v1:${file}:${s.size}:${s.mtimeMs}:${s.ctimeMs}`).digest('hex'),bad=Array(960).fill(0);bad[959]=1;
+    await writeFile(path.join(dir,`${key}.json`),JSON.stringify(bad));const info=await readWaveform(file,dir);
+    expect(info.key).not.toBe(key);expect(info.peaks).toBeNull();
   }finally{await rm(dir,{recursive:true,force:true});}
 });
