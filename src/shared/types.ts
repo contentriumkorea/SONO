@@ -4,6 +4,7 @@ export interface Track {
   artwork?: string; trackNumber?: number; sampleRate?: number; bitrate?: number;
   folderRoot?: string;
   folderId?: string; displayName?: string;
+  trim?: { start:number; end:number };
 }
 export interface LibraryFolder { id: string; name: string }
 export interface Playlist { id: string; name: string; trackIds: string[] }

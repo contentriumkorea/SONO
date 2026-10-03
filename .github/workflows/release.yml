@@ -64,6 +64,10 @@ jobs:
         run: pnpm verify:waveform
         env:
           SONO_SMOKE_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
+      - name: Verify packaged audio range editing
+        run: pnpm verify:trim
+        env:
+          SONO_SMOKE_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
       - name: Verify packaged Mac app replacement
         if: matrix.platform == 'mac'
         run: pnpm verify:mac-update

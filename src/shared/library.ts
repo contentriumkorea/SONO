@@ -1,5 +1,6 @@
 import type { AppState, PlaybackState, Repeat, Track } from './types';
 import { libraryFolders, songName, removeEmptyLibraryFolders } from './organization';
+import { sanitizeTrim } from './trim';
 export const EQ_FREQUENCIES = [31,44,63,88,125,177,250,354,500,707,1000,1414,2000,2828,4000,5657,8000,11314,16000,20000];
 export function emptyState(): AppState {
   return { version:1, tracks:[], playlists:[], settings:{volume:0.7,eqEnabled:false,eq:Array(20).fill(0),preamp:0,eqPreset:'Flat'}, playback:{currentId:null,anchorId:null,position:0,queue:[],order:[],repeat:'off',shuffle:false} };
@@ -54,7 +55,7 @@ export function sanitizeState(value: unknown): AppState {
   const raw=value as Partial<AppState>;
   if(Array.isArray(raw.tracks)) result.tracks=mergeTracks([],raw.tracks.filter((t):t is Track=>!!t&&typeof t.id==='string'&&typeof t.path==='string'&&typeof t.title==='string').map(t=>({...t,folderRoot:typeof t.folderRoot==='string'?t.folderRoot:undefined,artist:typeof t.artist==='string'?t.artist:'알 수 없는 아티스트',album:typeof t.album==='string'?t.album:'알 수 없는 앨범',duration:clamp(t.duration,0,864000,0),favorite:!!t.favorite})));
   const ids=new Set(result.tracks.map(t=>t.id));
-  result.tracks=result.tracks.map(t=>({...t,folderId:typeof t.folderId==='string'?t.folderId:undefined,displayName:typeof t.displayName==='string'?t.displayName.trim().slice(0,200)||undefined:undefined}));
+  result.tracks=result.tracks.map(t=>({...t,trim:sanitizeTrim(t.trim,t.duration),folderId:typeof t.folderId==='string'?t.folderId:undefined,displayName:typeof t.displayName==='string'?t.displayName.trim().slice(0,200)||undefined:undefined}));
   result.folders=libraryFolders(result.tracks,Array.isArray(raw.folders)?raw.folders:[]);
   const cleanIds=(arr:unknown):string[]=>Array.isArray(arr)?arr.filter((id):id is string=>typeof id==='string'&&ids.has(id)):[];
   if(Array.isArray(raw.playlists)) result.playlists=raw.playlists.filter(p=>p&&typeof p.id==='string'&&typeof p.name==='string').map(p=>({id:p.id,name:p.name,trackIds:[...new Set(cleanIds(p.trackIds))]}));

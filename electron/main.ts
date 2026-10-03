@@ -15,6 +15,7 @@ import { folderContains, trackDirectory } from '../src/shared/folders';
 import { createUpdateService, readRelease } from './updates';
 import { MacUpdater } from './mac-updates';
 import { readWaveform,writeWaveform } from './waveforms';
+import { sanitizeTrim } from '../src/shared/trim';
 import packageInfo from '../package.json';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 if(process.env.LUMA_DATA_DIR)app.setPath('userData',process.env.LUMA_DATA_DIR);
@@ -140,7 +141,7 @@ app.whenReady().then(async()=>{
     const incoming=sanitizeState(value);
     const known=new Map(state.tracks.map(track=>[track.id,track]));
     const ordered=[...new Set([...incoming.tracks.map(track=>track.id),...state.tracks.map(track=>track.id)])];
-    state={...incoming,tracks:ordered.flatMap(id=>{const track=known.get(id),edit=incoming.tracks.find(t=>t.id===id);return track?[{...track,favorite:edit?.favorite??track.favorite,folderId:edit?.folderId??track.folderId,displayName:edit?.displayName??track.displayName}]:[];})};
+    state={...incoming,tracks:ordered.flatMap(id=>{const track=known.get(id),edit=incoming.tracks.find(t=>t.id===id);return track?[{...track,trim:edit?sanitizeTrim(edit.trim,track.duration):track.trim,favorite:edit?.favorite??track.favorite,folderId:edit?.folderId??track.folderId,displayName:edit?.displayName??track.displayName}]:[];})};
     state=sanitizeState(state);await persist();
   });
   handle('music:import',async(_event,mode:string)=>{

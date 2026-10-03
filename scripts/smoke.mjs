@@ -64,11 +64,12 @@ try{
   await mini.getByRole('button',{name:'미니 플레이어 닫기'}).click().catch(error=>{if(!mini.isClosed())throw error;});
   assert.ok(mini.isClosed());await page.getByRole('heading',{name:'내 음악.'}).waitFor();
   await page.getByRole('button',{name:'취침 타이머',exact:true}).click();await page.getByRole('button',{name:'15분',exact:true}).click();console.log('PASS sleep timer setting');
+  const playbackOrder=await page.locator('.track-title').allTextContents();
   await page.getByRole('button',{name:'전체 재생',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('audio').paused&&document.querySelector('audio').currentTime>0.1);
-  assert.equal(await page.locator('.now-playing strong').textContent(),'검증 음악 B');
+  assert.equal(await page.locator('.now-playing strong').textContent(),playbackOrder[0]);
   await page.getByRole('slider',{name:'재생 위치'}).fill('11.8');
-  await page.waitForFunction(()=>document.querySelector('.now-playing strong').textContent==='검증 음악 A');console.log('PASS automatic next at end of track');
+  await page.waitForFunction(title=>document.querySelector('.now-playing strong').textContent===title,playbackOrder[1]);console.log('PASS automatic next at end of track');
   await page.getByRole('button',{name:'일시정지',exact:true}).click();
   await page.getByRole('searchbox').count().catch(()=>{});
   await page.getByRole('textbox',{name:'음악 검색'}).fill('음악 A');assert.equal(await page.getByRole('row').count(),2);await page.getByRole('textbox',{name:'음악 검색'}).fill('');console.log('PASS search');
