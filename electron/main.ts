@@ -14,6 +14,7 @@ import { createExitFlusher } from './lifecycle';
 import { folderContains, trackDirectory } from '../src/shared/folders';
 import { createUpdateService, readRelease } from './updates';
 import { MacUpdater } from './mac-updates';
+import { readWaveform,writeWaveform } from './waveforms';
 import packageInfo from '../package.json';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 if(process.env.LUMA_DATA_DIR)app.setPath('userData',process.env.LUMA_DATA_DIR);
@@ -99,7 +100,7 @@ async function importMusicPaths(paths:string[]){
   if(!files.length&&!scanErrors.length)throw new Error('가져올 수 있는 음악 파일이 없습니다. 음악 파일이나 음악이 담긴 폴더를 놓아주세요.');
   const folderRoots=(await Promise.all(paths.map(async input=>{try{const resolved=await realpath(input);return (await stat(resolved)).isDirectory()?resolved:null;}catch{return null;}}))).filter((p):p is string=>!!p).sort((a,b)=>a.length-b.length);
   const imported=await importFiles(files,folderRoots);
-  return {state,added:imported.added,errors:[...scanErrors,...imported.errors],folderRoots};
+  return {state,added:imported.added,errors:[...scanErrors,...imported.errors],folderRoots,trackIds:imported.tracks.map(t=>t.id)};
 }
 app.whenReady().then(async()=>{
   ({state,warning}=await readState(stateFile()));
@@ -122,6 +123,14 @@ app.whenReady().then(async()=>{
     return new Response('Not found',{status:404});
   });
   handle('state:get',()=>({state,warning}));
+  handle('waveform:get',async(_event,id:unknown)=>{
+    const track=state.tracks.find(t=>t.id===id);if(!track)throw new Error('음원을 찾을 수 없습니다.');
+    return readWaveform(track.path,path.join(app.getPath('userData'),'waveforms'));
+  });
+  handle('waveform:save',async(_event,id:unknown,key:unknown,peaks:unknown)=>{
+    const track=state.tracks.find(t=>t.id===id);if(!track||typeof key!=='string')throw new Error('음원을 찾을 수 없습니다.');
+    await writeWaveform(track.path,path.join(app.getPath('userData'),'waveforms'),key,peaks);
+  });
   handle('update:get',()=>updates.get());
   handle('update:check',()=>updates.check());
   handle('update:download',()=>updates.download());

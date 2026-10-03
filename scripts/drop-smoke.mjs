@@ -38,7 +38,7 @@ try{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.getByRole('heading',{name:'내 음악.'}).waitFor();
   const cdp=await application.context().newCDPSession(page);
-  async function drag(paths,type='drop',target='.content'){
+  async function drag(paths,type='drop',target='.topbar'){
     const box=await page.locator(target).first().boundingBox();
     const params={x:box.x+box.width/2,y:box.y+box.height/2,data:{items:[],files:paths,dragOperationsMask:1}};
     await cdp.send('Input.dispatchDragEvent',{...params,type:'dragEnter'});

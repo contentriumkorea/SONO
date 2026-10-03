@@ -13,7 +13,8 @@ export interface Settings { volume: number; eqEnabled: boolean; eq: number[]; pr
 export interface PlaybackState { currentId: string | null; anchorId: string | null; position: number; queue: string[]; order: string[]; repeat: Repeat; shuffle: boolean }
 export interface AppState { version: 1; tracks: Track[]; folders?: LibraryFolder[]; playlists: Playlist[]; settings: Settings; playback: PlaybackState }
 export interface Progress { current: number; total: number; name: string }
-export interface ImportResult { state: AppState; added: number; errors: string[]; cancelled?: boolean; folderRoots?: string[] }
+export interface ImportResult { state: AppState; added: number; errors: string[]; cancelled?: boolean; folderRoots?: string[]; trackIds?:string[] }
+export interface WaveformInfo {key:string;size:number;peaks:number[]|null}
 export interface LiveState { track: Track | null; playing: boolean; position: number; duration: number; volume: number }
 export type PlayerCommand = 'toggle' | 'next' | 'previous';
 export interface UpdateState {
@@ -21,6 +22,8 @@ export interface UpdateState {
   mode:'automatic'|'manual';releasesUrl:string;message:string;latestVersion?:string;percent?:number;
 }
 export interface Bridge {
+  getWaveform(id:string):Promise<WaveformInfo>;
+  saveWaveform(id:string,key:string,peaks:number[]):Promise<void>;
   getUpdateState():Promise<UpdateState>;
   checkForUpdates():Promise<UpdateState>;
   downloadUpdate():Promise<UpdateState>;

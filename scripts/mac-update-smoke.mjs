@@ -32,7 +32,7 @@ try{
   await exec('/usr/bin/ditto',[path.resolve('release/mac-universal/SONO.app'),target]);
   // Change only the fixture's version, retaining the new automatic updater code.
   // Versions <=0.1.2 cannot bootstrap this code through their manual updater.
-  const fixtureVersion='0.1.2',source=path.join(dir,'source');
+  const fixtureVersion='0.1.3',source=path.join(dir,'source');
   const asarPath=path.join(target,'Contents','Resources','app.asar');
   asar.extractAll(asarPath,source);
   const fixturePackage=JSON.parse(await readFile(path.join(source,'package.json'),'utf8'));

@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { AppState, LiveState, PlayerCommand } from '../src/shared/types';
 const listen=(channel:string,callback:(value:any)=>void)=>{const listener=(_event:unknown,value:unknown)=>callback(value);ipcRenderer.on(channel,listener);return()=>ipcRenderer.removeListener(channel,listener);};
 contextBridge.exposeInMainWorld('luma',{
+  getWaveform:(id:string)=>ipcRenderer.invoke('waveform:get',id),
+  saveWaveform:(id:string,key:string,peaks:number[])=>ipcRenderer.invoke('waveform:save',id,key,peaks),
   getUpdateState:()=>ipcRenderer.invoke('update:get'),
   checkForUpdates:()=>ipcRenderer.invoke('update:check'),
   downloadUpdate:()=>ipcRenderer.invoke('update:download'),
