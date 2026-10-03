@@ -16,3 +16,13 @@ it('caches actual peaks on disk, rejects invalid values, and invalidates replace
     await expect(writeWaveform(file,dir,first.key,peaks)).rejects.toThrow();
   }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+it('returns native PCM peaks even when the cache directory cannot be created',async()=>{
+  const dir=await mkdtemp(path.join(tmpdir(),'sono-cache-'));
+  try{
+    const file=path.join(dir,'real.wav'),cache=path.join(dir,'blocked'),b=Buffer.alloc(52);
+    b.write('RIFF');b.writeUInt32LE(44,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(8000,24);b.writeUInt32LE(16000,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(8,40);
+    [0,16384,-8192,0].forEach((v,i)=>b.writeInt16LE(v,44+i*2));await writeFile(file,b);await writeFile(cache,'blocks mkdir');
+    const info=await readWaveform(file,cache);expect(info.peaks).toHaveLength(960);expect(Math.max(...info.peaks!)).toBe(.5);
+  }finally{await rm(dir,{recursive:true,force:true});}
+});

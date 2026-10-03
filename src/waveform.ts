@@ -2,6 +2,11 @@ import type { Track } from './shared/types';
 import { audioPeaks } from './shared/waveform';
 // Serialize decoding so rapidly changing songs cannot allocate several full buffers.
 let pending:Promise<unknown>=Promise.resolve();
+// Disk caching is optional: successful analysis must still be shown if saving fails.
+async function cachePeaks(id:string,key:string,peaks:number[],signal:AbortSignal){
+  try{await window.luma.saveWaveform(id,key,peaks);}catch{}
+  signal.throwIfAborted();return peaks;
+}
 export function loadWaveform(track:Track,signal:AbortSignal,onProgress?:(peaks:number[],percent:number)=>void):Promise<number[]>{
   const task=pending.catch(()=>{}).then(async()=>{
     signal.throwIfAborted();const info=await window.luma.getWaveform(track.id);signal.throwIfAborted();
@@ -9,7 +14,7 @@ export function loadWaveform(track:Track,signal:AbortSignal,onProgress?:(peaks:n
     try{
       const {decodeStream}=await import('./stream-waveform');signal.throwIfAborted();
       const peaks=await decodeStream(`luma://audio/${track.id}`,track.duration,signal,onProgress);
-      signal.throwIfAborted();await window.luma.saveWaveform(track.id,info.key,peaks);return peaks;
+      signal.throwIfAborted();return await cachePeaks(track.id,info.key,peaks,signal);
     }catch(error){
       signal.throwIfAborted();
       // Only unsupported short files use the whole-file compatibility decoder.
@@ -20,7 +25,7 @@ export function loadWaveform(track:Track,signal:AbortSignal,onProgress?:(peaks:n
     if(bytes.byteLength>128*1024**2)throw new Error('음원이 너무 큽니다.');
     const context=new OfflineAudioContext(1,1,11025),buffer=await context.decodeAudioData(bytes);signal.throwIfAborted();
     const peaks=await audioPeaks(Array.from({length:buffer.numberOfChannels},(_,i)=>buffer.getChannelData(i)),undefined,signal);
-    signal.throwIfAborted();await window.luma.saveWaveform(track.id,info.key,peaks);return peaks;
+    signal.throwIfAborted();return cachePeaks(track.id,info.key,peaks,signal);
   });
   pending=task;return task;
 }

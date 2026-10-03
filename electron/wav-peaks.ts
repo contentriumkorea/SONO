@@ -1,5 +1,6 @@
 import { open } from 'node:fs/promises';
 import { WAVEFORM_POINTS } from '../src/shared/waveform';
+import { pcmPeaks } from './pcm-peaks';
 // Stream PCM WAV instead of allocating a decoded buffer for long event tracks.
 export async function wavPeaks(file:string,count=WAVEFORM_POINTS):Promise<number[]|null>{
   const handle=await open(file,'r');
@@ -21,24 +22,6 @@ export async function wavPeaks(file:string,count=WAVEFORM_POINTS):Promise<number
     }
     const width=bits/8;
     if(!start||!channels||channels>32||align<channels*width||!align||align>65536||!((format===1&&[8,16,24,32].includes(bits))||(format===3&&[32,64].includes(bits))))return null;
-    const frames=Math.floor(length/align);if(!frames)return Array(count).fill(0);
-    const peaks=new Array<number>(count).fill(0),buffer=Buffer.alloc(Math.floor(65536/align)*align);
-    let frame=0,position=start;
-    while(frame<frames){
-      const wanted=Math.min(buffer.length,(frames-frame)*align),{bytesRead}=await handle.read(buffer,0,wanted,position);
-      if(bytesRead!==wanted)throw new Error('음원 파일이 변경되었습니다.');
-      for(let at=0;at<bytesRead;at+=align,frame++){
-        const bucket=Math.min(count-1,Math.floor(frame/frames*count));let max=peaks[bucket];
-        for(let channel=0;channel<channels;channel++){
-          const index=at+channel*width;
-          const value=format===3?(bits===32?buffer.readFloatLE(index):buffer.readDoubleLE(index)):
-            bits===8?(buffer[index]-128)/128:buffer.readIntLE(index,width)/2**(bits-1);
-          if(Number.isFinite(value))max=Math.max(max,Math.min(1,Math.abs(value)));
-        }
-        peaks[bucket]=max;
-      }
-      position+=bytesRead;
-    }
-    return peaks;
+    return await pcmPeaks(handle,{start,frames:Math.floor(length/align),align,channels,bits,float:format===3,unsigned8:format===1&&bits===8},count);
   }finally{await handle.close();}
 }
