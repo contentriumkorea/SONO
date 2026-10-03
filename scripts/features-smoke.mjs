@@ -67,7 +67,7 @@ try{
   assert.equal(decodedHeights[5],1);assert.ok(decodedHeights[65]>decodedHeights[35]*3);
   console.log('PASS actual Web Audio decoding and source-byte fetch, in addition to the native PCM streaming path');
   await page.locator('.content').evaluate(el=>el.scrollTop=0);await seek.blur();
-  await page.screenshot({path:'test-results/SONO-waveform.png'});
+  await page.screenshot({path:'test-results/SONO-waveform.png'});await page.locator('.player-bar').screenshot({path:'test-results/SONO-waveform-player.png'});
   console.log('PASS real PCM waveform silence/quiet/loud sections, cache, range/click/drag/keyboard seeking and paused state');
   await button('재생목록 만들기').click();await page.getByPlaceholder('예: 밤 산책, 집중할 때').fill('시험 목록');await button('만들기').click();
   await drop([files[0]],page.locator('.topbar'));await button('A').waitFor();
