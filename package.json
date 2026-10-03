@@ -1,7 +1,7 @@
 {
   "name": "sono",
   "productName": "SONO",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "description": "A thoughtfully designed local music player for macOS and Windows",
@@ -10,7 +10,10 @@
     "url": "https://github.com/contentriumkorea"
   },
   "homepage": "https://github.com/contentriumkorea/SONO",
-  "repository": { "type": "git", "url": "https://github.com/contentriumkorea/SONO.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/contentriumkorea/SONO.git"
+  },
   "main": "dist-electron/main.mjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -19,8 +22,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "pnpm test && pnpm typecheck && pnpm build",
-    "verify:interactions": "node scripts/delete-smoke.mjs && node scripts/drop-smoke.mjs && node scripts/organize-smoke.mjs && node scripts/playback-smoke.mjs && node scripts/smoke.mjs && node scripts/update-smoke.mjs && node scripts/features-smoke.mjs",
+    "verify:interactions": "node scripts/delete-smoke.mjs && node scripts/drop-smoke.mjs && node scripts/organize-smoke.mjs && node scripts/playback-smoke.mjs && node scripts/smoke.mjs && node scripts/update-smoke.mjs && node scripts/features-smoke.mjs && node scripts/long-waveform-smoke.mjs",
     "verify:features": "node scripts/features-smoke.mjs",
+    "verify:waveform": "node scripts/long-waveform-smoke.mjs",
     "verify:mac-update": "node scripts/mac-update-smoke.mjs",
     "verify:update": "node scripts/update-smoke.mjs --packaged",
     "pack:win": "pnpm build && electron-builder --win --dir",
@@ -31,7 +35,12 @@
   "build": {
     "appId": "local.luma.music",
     "productName": "SONO",
-    "publish": { "provider": "github", "owner": "contentriumkorea", "repo": "SONO", "releaseType": "release" },
+    "publish": {
+      "provider": "github",
+      "owner": "contentriumkorea",
+      "repo": "SONO",
+      "releaseType": "release"
+    },
     "directories": {
       "output": "release"
     },
@@ -70,6 +79,7 @@
   "dependencies": {
     "electron-updater": "6.8.0",
     "lucide-react": "^1.49.0",
+    "mediabunny": "1.61.0",
     "music-metadata": "^11.16.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

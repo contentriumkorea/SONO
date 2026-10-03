@@ -146,7 +146,9 @@ try{
   await page.getByRole('button',{name:'음악 추가',exact:true}).click();
   await page.getByRole('button',{name:'M3U 목록 가져오기',exact:true}).click();
   await page.getByRole('button',{name:'드래그 목록 3',exact:true}).click();
-  await page.getByRole('row').last().dragTo(page.getByRole('row').nth(1));
+  await page.waitForFunction(()=>document.querySelectorAll('.track-title').length===3);
+  await page.locator('.track-row .drag-handle').last().dragTo(page.locator('.track-row .drag-handle').first(),{targetPosition:{x:8,y:3}});
+  await page.waitForFunction(()=>document.querySelector('.track-title')?.textContent==='폴더 음악 C');
   assert.deepEqual(await page.locator('.track-title').allTextContents(),['폴더 음악 C','드롭 음악 A','드롭 음악 B']);
   await page.getByRole('button',{name:'드롭 음악 A',exact:true}).click();
   await page.getByRole('button',{name:'드롭 음악 B',exact:true}).click({modifiers:['Shift']});

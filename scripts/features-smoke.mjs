@@ -55,7 +55,7 @@ try{
   await seek.focus();await page.keyboard.press('ArrowLeft');assert.ok(await page.evaluate(()=>document.querySelector('audio').currentTime)<9.1);
   assert.equal(await page.evaluate(()=>document.querySelector('audio').paused),true);
   assert.ok((await readdir(path.join(data,'waveforms'))).some(n=>n.endsWith('.json')));
-  // Force an uncached response for B to exercise the Web Audio decoder on real bytes.
+  // Force an uncached response for B to exercise browser chunk decoding on real bytes.
   // PCM WAV normally uses the streaming native path tested above.
   const bid=await row('B').getAttribute('data-track-id');
   const info=await page.evaluate(id=>window.luma.getWaveform(id),bid);
@@ -65,7 +65,7 @@ try{
   await button('B 일시정지').click();await page.waitForFunction(()=>document.querySelector('audio').paused);
   const decodedHeights=await page.locator('.waveform-remaining rect').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('height'))));
   assert.equal(decodedHeights[5],1);assert.ok(decodedHeights[65]>decodedHeights[35]*3);
-  console.log('PASS actual Web Audio decoding and source-byte fetch, in addition to the native PCM streaming path');
+  console.log('PASS actual browser chunk decoding and source-byte fetch, in addition to the native PCM streaming path');
   await page.locator('.content').evaluate(el=>el.scrollTop=0);await seek.blur();
   await page.screenshot({path:'test-results/SONO-waveform.png'});await page.locator('.player-bar').screenshot({path:'test-results/SONO-waveform-player.png'});
   console.log('PASS real PCM waveform silence/quiet/loud sections, cache, range/click/drag/keyboard seeking and paused state');

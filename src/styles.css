@@ -116,4 +116,5 @@ select{background:#353535;border-color:#6c6c6c;color:#e4e4e4;font-size:11px}
 .seek-row .waveform-seek input::-webkit-slider-thumb{appearance:none;width:8px;height:32px;border-radius:2px;background:#fff;opacity:0}
 .seek-row .waveform-seek input:focus-visible{outline:1px solid #d5d5d5;outline-offset:3px}.seek-row .waveform-seek input:disabled{cursor:default}
 .waveform-fallback{width:100%;height:4px;border-radius:4px;background:#7e7e7e;overflow:hidden}.waveform-fallback>div{height:100%;background:#eee}
+.waveform-status{position:absolute;right:0;top:-11px;font-size:10px;line-height:11px;color:#c6c6c6;pointer-events:none}
 .transport{gap:6px}
