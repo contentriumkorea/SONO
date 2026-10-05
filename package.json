@@ -1,7 +1,7 @@
 {
   "name": "sono",
   "productName": "SONO",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "type": "module",
   "description": "A thoughtfully designed local music player for macOS and Windows",
@@ -22,7 +22,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "pnpm test && pnpm typecheck && pnpm build",
-    "verify:interactions": "node scripts/delete-smoke.mjs && node scripts/drop-smoke.mjs && node scripts/organize-smoke.mjs && node scripts/playback-smoke.mjs && node scripts/smoke.mjs && node scripts/update-smoke.mjs && node scripts/features-smoke.mjs && node scripts/long-waveform-smoke.mjs && node scripts/trim-smoke.mjs && node scripts/waveform-fade-smoke.mjs && node scripts/mislabeled-audio-smoke.mjs",
+    "verify:interactions": "node scripts/delete-smoke.mjs && node scripts/drop-smoke.mjs && node scripts/organize-smoke.mjs && node scripts/playback-smoke.mjs && node scripts/smoke.mjs && node scripts/update-smoke.mjs && node scripts/features-smoke.mjs && node scripts/long-waveform-smoke.mjs && node scripts/trim-smoke.mjs && node scripts/waveform-fade-smoke.mjs && node scripts/mislabeled-audio-smoke.mjs && node scripts/loop-smoke.mjs",
     "verify:features": "node scripts/features-smoke.mjs",
     "verify:waveform": "node scripts/long-waveform-smoke.mjs",
     "verify:trim": "node scripts/trim-smoke.mjs",
@@ -33,7 +33,8 @@
     "release:win": "pnpm build && electron-builder --win nsis --x64 --publish never",
     "release:mac": "pnpm build && electron-builder --mac --universal --publish never",
     "verify:waveform-fade": "node scripts/waveform-fade-smoke.mjs",
-    "verify:mislabeled-audio": "node scripts/mislabeled-audio-smoke.mjs"
+    "verify:mislabeled-audio": "node scripts/mislabeled-audio-smoke.mjs",
+    "verify:loop": "node scripts/loop-smoke.mjs"
   },
   "build": {
     "appId": "local.luma.music",
