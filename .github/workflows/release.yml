@@ -90,6 +90,8 @@ jobs:
       - name: Verify genuine SONO to MusicBoard Mac migration
         if: matrix.platform == 'mac'
         run: pnpm verify:legacy-mac-update
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/upload-artifact@v4
         with:
           name: sono-${{ matrix.platform }}

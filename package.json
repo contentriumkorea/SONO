@@ -4,7 +4,7 @@
   "version": "0.1.10",
   "private": true,
   "type": "module",
-  "description": "A thoughtfully designed local music player for macOS and Windows",
+  "description": "MusicBoard: a local music player for macOS and Windows",
   "author": {
     "name": "Contentrium",
     "url": "https://github.com/contentriumkorea"
