@@ -25,7 +25,7 @@ export function readRelease(value:unknown,platform:string,releasesUrl:string):{v
   if(!r||r.draft||r.prerelease||typeof r.tag_name!=='string'||r.html_url!==`${releasesUrl}/tag/${r.tag_name}`)throw new Error('릴리스 정보를 확인할 수 없습니다.');
   const version=r.tag_name.replace(/^v/,'');numbers(version);
   const extension=platform==='darwin'?'.dmg':'.exe';
-  if(!Array.isArray(r.assets)||!r.assets.some(a=>typeof a.name==='string'&&a.name.startsWith('SONO-')&&a.name.endsWith(extension)))throw new Error('설치 파일을 준비 중입니다. 잠시 후 다시 확인해주세요.');
+  if(!Array.isArray(r.assets)||!r.assets.some(a=>typeof a.name==='string'&&/^(MusicBoard|SONO)-/.test(a.name)&&a.name.endsWith(extension)))throw new Error('설치 파일을 준비 중입니다. 잠시 후 다시 확인해주세요.');
   return {version};
 }
 export function createUpdateService(options:Options){

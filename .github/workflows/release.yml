@@ -1,4 +1,4 @@
-name: SONO
+name: MusicBoard
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
           - os: macos-14
             platform: mac
             command: release:mac
-            executable: release/mac-universal/SONO.app/Contents/MacOS/SONO
+            executable: release/mac-universal/MusicBoard.app/Contents/MacOS/SONO
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -80,9 +80,16 @@ jobs:
         run: pnpm verify:loop
         env:
           SONO_SMOKE_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
+      - name: Verify packaged MusicBoard branding and data compatibility
+        run: pnpm verify:branding
+        env:
+          SONO_SMOKE_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
       - name: Verify packaged Mac app replacement
         if: matrix.platform == 'mac'
         run: pnpm verify:mac-update
+      - name: Verify genuine SONO to MusicBoard Mac migration
+        if: matrix.platform == 'mac'
+        run: pnpm verify:legacy-mac-update
       - uses: actions/upload-artifact@v4
         with:
           name: sono-${{ matrix.platform }}
@@ -115,5 +122,5 @@ jobs:
             echo "Release already exists. Increase package.json version to publish an update."
             exit 1
           fi
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "SONO ${version}" --notes-file docs/release-notes.md installers/*
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "MusicBoard ${version}" --notes-file docs/release-notes.md installers/*
           gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --latest

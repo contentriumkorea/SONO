@@ -19,8 +19,9 @@ interface Options {
 }
 export function readMacRelease(value:unknown,releasesUrl:string):MacRelease {
   const {version}=readRelease(value,'darwin',releasesUrl);
-  const name=`SONO-${version}-mac-universal.zip`;
   const release=value as {assets:{name:string;browser_download_url?:string;size?:number;digest?:string}[]};
+  const preferred=`MusicBoard-${version}-mac-universal.zip`;
+  const name=release.assets.some(a=>a.name===preferred)?preferred:`SONO-${version}-mac-universal.zip`;
   const asset=release.assets.find(a=>a.name===name);
   const url=`${releasesUrl}/download/v${version}/${name}`;
   if(!asset||asset.browser_download_url!==url||!Number.isSafeInteger(asset.size)||asset.size!<=0||asset.size!>2*1024**3||!/^sha256:[a-f\d]{64}$/i.test(asset.digest??''))
@@ -29,21 +30,24 @@ export function readMacRelease(value:unknown,releasesUrl:string):MacRelease {
 }
 export async function extractMacBundle(zip:string,destination:string,version:string):Promise<string>{
   const listing=await exec('/usr/bin/unzip',['-Z1',zip],{maxBuffer:8*1024**2});
+  const roots=new Set<string>();
   for(const entry of listing.stdout.split('\n').filter(Boolean)){
-    if(!/^(SONO\.app\/|__MACOSX\/)/.test(entry)||entry.includes('\\')||entry.split('/').includes('..'))throw new Error('잘못된 앱 압축 파일입니다.');
+    if(!/^((MusicBoard|SONO)\.app\/|__MACOSX\/)/.test(entry)||entry.includes('\\')||entry.split('/').includes('..'))throw new Error('잘못된 앱 압축 파일입니다.');
+    if(!entry.startsWith('__MACOSX/'))roots.add(entry.split('/')[0]);
   }
+  if(roots.size!==1)throw new Error('잘못된 앱 압축 파일입니다.');
   await mkdir(destination,{recursive:true});await exec('/usr/bin/ditto',['-x','-k',zip,destination]);
-  const bundle=path.join(destination,'SONO.app'),plist=path.join(bundle,'Contents','Info.plist');
+  const bundle=path.join(destination,[...roots][0]),plist=path.join(bundle,'Contents','Info.plist');
   const field=async(key:string)=>(await exec('/usr/bin/plutil',['-extract',key,'raw','-o','-',plist])).stdout.trim();
-  if(await field('CFBundleIdentifier')!=='local.luma.music'||await field('CFBundleShortVersionString')!==version||await field('CFBundleExecutable')!=='SONO')throw new Error('SONO 업데이트 앱을 확인하지 못했습니다.');
+  if(await field('CFBundleIdentifier')!=='local.luma.music'||await field('CFBundleShortVersionString')!==version||await field('CFBundleExecutable')!=='SONO')throw new Error('MusicBoard 업데이트 앱을 확인하지 못했습니다.');
   await exec('/usr/bin/codesign',['--verify','--deep','--strict',bundle]);return bundle;
 }
 export async function prepareMacInstall(request:MacInstall):Promise<void>{
   const {workspace,token,version,helperPath,pid,stagedBundle}=request;
   const target=await realpath(request.bundlePath);
-  if(!target.endsWith('.app')||target.includes('/AppTranslocation/')||target.startsWith('/Volumes/'))throw new Error('SONO를 응용프로그램 폴더로 옮긴 뒤 업데이트해주세요.');
+  if(!target.endsWith('.app')||target.includes('/AppTranslocation/')||target.startsWith('/Volumes/'))throw new Error('MusicBoard를 응용프로그램 폴더로 옮긴 뒤 업데이트해주세요.');
   try{await access(path.dirname(target),constants.W_OK);await access(target,constants.W_OK);}
-  catch{throw new Error('앱 폴더에 쓰기 권한이 없습니다. 사용자 응용프로그램 폴더로 SONO를 옮겨주세요.');}
+  catch{throw new Error('앱 폴더에 쓰기 권한이 없습니다. 사용자 응용프로그램 폴더로 MusicBoard를 옮겨주세요.');}
   const candidate=`${target}.sono-update-${token}.app`,helper=path.join(workspace,'install.sh'),health=path.join(workspace,'health');
   let created=false,started=false;
   try{
@@ -63,7 +67,7 @@ export class MacUpdater extends EventEmitter implements NativeUpdater {
   constructor(private options:Options){super();}
   async checkForUpdates(){
     this.release=null;const api=this.options.releasesUrl.replace('https://github.com/','https://api.github.com/repos/');
-    const response=await this.options.fetch(`${api}/latest`,{headers:{Accept:'application/vnd.github+json','User-Agent':'SONO'},signal:AbortSignal.timeout(15000)});
+    const response=await this.options.fetch(`${api}/latest`,{headers:{Accept:'application/vnd.github+json','User-Agent':'MusicBoard'},signal:AbortSignal.timeout(15000)});
     if(!response.ok)throw new Error('새 버전을 확인하지 못했습니다.');
     const release=readMacRelease(await response.json(),this.options.releasesUrl);
     if(isNewerVersion(release.version,this.options.version)){this.release=release;this.emit('update-available',{version:release.version});}else this.emit('update-not-available');

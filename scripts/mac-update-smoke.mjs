@@ -16,8 +16,9 @@ const libRequire=createRequire(builderRequire.resolve('app-builder-lib/package.j
 const asar=libRequire('@electron/asar');
 const {version}=JSON.parse(await readFile('package.json','utf8'));
 const dir=await realpath(await mkdtemp(path.join(tmpdir(),"sono packaged update ' ")));
-const target=path.join(dir,'Applications','SONO.app'),data=path.join(dir,'data');
-const archive=path.resolve(`release/SONO-${version}-mac-universal.zip`);
+const legacy=process.argv.includes('--legacy');
+const target=path.join(dir,'Applications',legacy?'SONO.app':'MusicBoard.app'),data=path.join(dir,'data');
+const archive=path.resolve(`release/${legacy?'SONO':'MusicBoard'}-${version}-mac-universal.zip`);
 const plist=path.join(target,'Contents','Info.plist');
 const stateFile=path.join(data,'state.json');
 let application,page,installedPid;
@@ -29,11 +30,20 @@ async function eventually(callback,timeout=90000){
 }
 try{
   await mkdir(path.dirname(target),{recursive:true});await mkdir(data);
-  await exec('/usr/bin/ditto',[path.resolve('release/mac-universal/SONO.app'),target]);
+  if(legacy){
+    const response=await fetch('https://api.github.com/repos/contentriumkorea/SONO/releases/tags/v0.1.9');assert.equal(response.ok,true);
+    const release=await response.json(),asset=release.assets.find(a=>a.name==='SONO-0.1.9-mac-universal.zip');assert.ok(asset);
+    assert.equal(asset.browser_download_url,'https://github.com/contentriumkorea/SONO/releases/download/v0.1.9/SONO-0.1.9-mac-universal.zip');assert.match(asset.digest,/^sha256:[a-f\d]{64}$/);
+    const downloaded=await fetch(asset.browser_download_url);assert.equal(downloaded.ok,true);const bytes=Buffer.from(await downloaded.arrayBuffer());assert.equal(bytes.length,asset.size);assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.digest.slice(7));
+    const zip=path.join(dir,'old.zip');await writeFile(zip,bytes);const listing=(await exec('/usr/bin/unzip',['-Z1',zip],{maxBuffer:8*1024**2})).stdout;
+    assert.ok(listing.split('\n').filter(Boolean).every(e=>/^(SONO\.app\/|__MACOSX\/)/.test(e)&&!e.includes('\\')&&!e.split('/').includes('..')));
+    await exec('/usr/bin/ditto',['-x','-k',zip,path.dirname(target)]);
+  }else await exec('/usr/bin/ditto',[path.resolve('release/mac-universal/MusicBoard.app'),target]);
   // Change only the fixture's version, retaining the new automatic updater code.
   // Versions <=0.1.2 cannot bootstrap this code through their manual updater.
-  const fixtureVersion='0.1.3',source=path.join(dir,'source');
+  const fixtureVersion=legacy?'0.1.9':'0.1.3',source=path.join(dir,'source');
   const asarPath=path.join(target,'Contents','Resources','app.asar');
+  if(!legacy){
   asar.extractAll(asarPath,source);
   const fixturePackage=JSON.parse(await readFile(path.join(source,'package.json'),'utf8'));
   fixturePackage.version=fixtureVersion;await writeFile(path.join(source,'package.json'),JSON.stringify(fixturePackage));
@@ -42,6 +52,7 @@ try{
   const integrity={'Resources/app.asar':{algorithm:'SHA256',hash:createHash('sha256').update(asar.getRawHeader(asarPath).headerString).digest('hex')}};
   await exec('/usr/bin/plutil',['-replace','ElectronAsarIntegrity','-json',JSON.stringify(integrity),plist]);
   for(const key of ['CFBundleShortVersionString','CFBundleVersion'])await exec('/usr/bin/plutil',['-replace',key,'-string',fixtureVersion,plist]);
+  }
   const marker=path.join(target,'Contents','Resources','old-version-marker');await writeFile(marker,'old fixture');
   await exec('/usr/bin/codesign',['--force','--deep','--sign','-',target]);
   const audio=path.join(dir,'음악.wav'),size=44100*2*30,b=Buffer.alloc(44+size);
@@ -62,7 +73,7 @@ try{
   assert.equal(await page.evaluate(async()=> (await window.luma.getUpdateState()).mode),'automatic');
   const bytes=await readFile(archive),name=path.basename(archive),releases='https://github.com/contentriumkorea/SONO/releases';
   const release={tag_name:`v${version}`,draft:false,prerelease:false,html_url:`${releases}/tag/v${version}`,
-    assets:[{name:`SONO-${version}-mac-universal.dmg`},{name,browser_download_url:`${releases}/download/v${version}/${name}`,size:bytes.length,digest:`sha256:${createHash('sha256').update(bytes).digest('hex')}`}]};
+    assets:[{name:`${legacy?'SONO':'MusicBoard'}-${version}-mac-universal.dmg`},{name,browser_download_url:`${releases}/download/v${version}/${name}`,size:bytes.length,digest:`sha256:${createHash('sha256').update(bytes).digest('hex')}`}]};
   await application.evaluate(({net},{release,archive})=>{
     const original=net.fetch.bind(net),fs=process.getBuiltinModule('fs'),{Readable}=process.getBuiltinModule('stream');
     net.fetch=async(url,init)=>{
@@ -91,7 +102,9 @@ try{
   assert.equal(saved.tracks[0].favorite,true);assert.equal(saved.tracks[0].displayName,'보존할 음악');
   assert.deepEqual(saved.playlists,state.playlists);assert.equal(saved.settings.volume,0.43);assert.equal(saved.settings.fadeOut,1.2);
   assert.equal(saved.playback.repeat,'stop');assert.ok(Math.abs(saved.playback.position-4.1)<0.2);await access(audio);
-  console.log('PASS macOS packaged automatic update: one UI click, streamed ZIP, SHA-256, bundle verification, old app exit, actual app replacement, new app restart/health, backup cleanup and library/settings preservation (release HTTP supplied locally)');
+  assert.equal((await exec('/usr/bin/plutil',['-extract','CFBundleDisplayName','raw','-o','-',plist])).stdout.trim(),'MusicBoard');
+  assert.equal(JSON.parse(asar.extractFile(asarPath,'package.json').toString()).productName,'MusicBoard');
+  console.log((legacy?'PASS genuine published SONO 0.1.9 to MusicBoard migration: ':'PASS MusicBoard packaged automatic update: ')+'one UI click, streamed ZIP, SHA-256, bundle verification, old app exit, actual app replacement, new app restart/health, backup cleanup and library/settings preservation (release HTTP supplied locally)');
 }catch(error){
   if(page&&!page.isClosed()){await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/mac-update-failure.png'}).catch(()=>{});}
   const cache=path.join(data,'mac-updates');

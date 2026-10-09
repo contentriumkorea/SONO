@@ -51,3 +51,16 @@ it('rejects untrusted download locations, missing checksums and wrong version as
   for(const bad of [{...zip,browser_download_url:'https://evil.example/update.zip'},{...zip,digest:null},{...zip,name:'SONO-0.1.0-mac-universal.zip'},{...zip,size:0}])
     expect(()=>readMacRelease({...release,assets:[release.assets[0],bad]},releasesUrl)).toThrow();
 });
+it('prefers the MusicBoard archive while retaining legacy SONO release compatibility',()=>{
+  const name='MusicBoard-0.2.0-mac-universal.zip';
+  const zip={...release.assets[1],name,browser_download_url:`${releasesUrl}/download/v0.2.0/${name}`};
+  const current={...release,assets:[{name:'MusicBoard-0.2.0-mac-universal.dmg'},zip]};
+  expect(readMacRelease(current,releasesUrl).url).toBe(zip.browser_download_url);
+  expect(readMacRelease({...release,assets:[...release.assets,...current.assets]},releasesUrl).url).toBe(zip.browser_download_url);
+  expect(readMacRelease(release,releasesUrl).url).toBe(release.assets[1].browser_download_url);
+});
+it('does not fall back to SONO when a present MusicBoard archive fails verification',()=>{
+  const name='MusicBoard-0.2.0-mac-universal.zip';
+  for(const bad of [{...release.assets[1],name},{...release.assets[1],name,browser_download_url:`${releasesUrl}/download/v0.2.0/${name}`,digest:null}])
+    expect(()=>readMacRelease({...release,assets:[...release.assets,bad]},releasesUrl)).toThrow();
+});

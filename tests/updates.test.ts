@@ -68,3 +68,8 @@ it('validates GitHub releases, missing installers and stable semver rather than 
   expect(()=>readRelease({...release,tag_name:'v0.2.0-beta.1'},'darwin',releasesUrl)).toThrow();
   const {service,read}=setup(false);read.mockResolvedValueOnce({version:'0.10.0'});await service.check();expect(service.get().status).toBe('available');
 });
+it('accepts MusicBoard installers on both platforms without changing the trusted repository',()=>{
+  const release={tag_name:'v0.1.10',draft:false,prerelease:false,html_url:`${releasesUrl}/tag/v0.1.10`,assets:[{name:'MusicBoard-0.1.10-mac-universal.dmg'},{name:'MusicBoard-0.1.10-windows-x64-setup.exe'}]};
+  for(const platform of ['darwin','win32'])expect(readRelease(release,platform,releasesUrl)).toEqual({version:'0.1.10'});
+  expect(()=>readRelease({...release,html_url:'https://github.com/contentriumkorea/MusicBoard/releases/tag/v0.1.10'},'darwin',releasesUrl)).toThrow();
+});
