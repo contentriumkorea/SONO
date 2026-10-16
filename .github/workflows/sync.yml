@@ -1,0 +1,22 @@
+name: MusicBoard update compatibility
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/sync.py', '.github/workflows/sync.yml']
+  workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
+permissions:
+  contents: write
+concurrency:
+  group: musicboard-update-compatibility
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mirror verified MusicBoard update files
+        run: python scripts/sync.py
+        env:
+          GH_TOKEN: ${{ github.token }}
